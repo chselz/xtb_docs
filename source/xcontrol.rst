@@ -125,6 +125,46 @@ fixed atoms:
 
    Since version 6.3 the input is sorted and duplicates are removed automatically.
 
+For larger systems it is often easier to state which atoms should be
+optimized instead of which atoms should be fixed. The ``free`` keyword
+fixes all atoms *except* the listed ones, e.g. to optimize only a ligand
+with the atom numbers 1201--1245 in an otherwise fixed protein use
+
+.. code:: text
+
+  $fix
+     free: 1201-1245
+  $end
+
+The ``free`` keyword uses the same atom numbering and list syntax as the
+``atoms`` keyword. Additionally, whole elements can be kept free by their
+element symbol, e.g. to optimize only the hydrogen atoms as in X-ray structure
+refinement use
+
+.. code:: text
+
+  $fix
+     free: H
+  $end
+
+Atom numbers and element symbols can be mixed in the same list, e.g.
+``free: H,1201-1245``. Note that numbers in ``free`` always refer to atoms,
+not to atomic numbers as in the ``elements`` keyword.
+The ``free`` keyword can be combined with ``atoms`` and ``elements``.
+All keywords in the ``$fix`` group only add atoms to the set of fixed atoms,
+therefore atoms selected by ``atoms`` or ``elements`` stay fixed even if
+they are listed in ``free``, independent of the order of the keywords.
+For example
+
+.. code:: text
+
+  $fix
+     free: 1201-1245
+     elements: C
+  $end
+
+only optimizes the non-carbon atoms within 1201--1245.
+
 Constraining Potentials
 -----------------------
 
