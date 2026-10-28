@@ -228,6 +228,22 @@ spotted in the verbose output of the constraints summary.
 Note that in some versions of ``xtb`` this leads to ``NaN`` for the
 gradient, therefore double-check the constrained atom list for duplicates.
 
+As in the ``$fix`` group, the ``free`` keyword selects all atoms *except*
+the listed atom numbers and elements, e.g. to keep the heavy atom framework
+roughly in place while relaxing all hydrogen atoms use
+
+.. code:: text
+
+  $constrain
+     free: H
+  $end
+
+Atoms selected by ``atoms`` or ``elements`` stay constrained even if they
+are listed in ``free``.
+Since a harmonic potential is generated for every pair of constrained atoms,
+the cost grows quadratically with the number of selected atoms. For large
+systems exact fixing with ``$fix`` is cheaper.
+
 To constrain the atoms more tightly the force constant can be adjusted
 
 .. code:: text
