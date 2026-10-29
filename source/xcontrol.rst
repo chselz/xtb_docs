@@ -150,6 +150,9 @@ refinement use
 Atom numbers and element symbols can be mixed in the same list, e.g.
 ``free: H,1201-1245``. Note that numbers in ``free`` always refer to atoms,
 not to atomic numbers as in the ``elements`` keyword.
+The ``free`` keyword can be given multiple times and the free atoms of all
+entries are combined, i.e. ``free: H`` and ``free: O`` in two separate lines
+is equivalent to ``free: H,O``.
 The ``free`` keyword can be combined with ``atoms`` and ``elements``.
 All keywords in the ``$fix`` group only add atoms to the set of fixed atoms,
 therefore atoms selected by ``atoms`` or ``elements`` stay fixed even if
@@ -238,8 +241,8 @@ roughly in place while relaxing all hydrogen atoms use
      free: H
   $end
 
-Atoms selected by ``atoms`` or ``elements`` stay constrained even if they
-are listed in ``free``.
+Multiple ``free`` entries are combined and atoms selected by ``atoms`` or
+``elements`` stay constrained even if they are listed in ``free``.
 Since a harmonic potential is generated for every pair of constrained atoms,
 the cost grows quadratically with the number of selected atoms. For large
 systems exact fixing with ``$fix`` is cheaper.
