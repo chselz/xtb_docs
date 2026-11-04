@@ -8,6 +8,9 @@ This guide is aimed to give a general overview of the ONIOM implementation withi
 
 .. note::
    This feature is only present in version 6.6 and newer or in the current bleeding-edge version.
+   The evaluation of GFN-xTB methods with the ``tblite`` library (``--oniom`` together with ``--tblite``)
+   and the handling of fixed atoms and constraints described in :ref:`oniom-fixing` are only
+   available in versions newer than 6.7.1 (currently the bleeding-edge version).
 
 
 .. contents::
@@ -45,6 +48,7 @@ Methods
 * **gfnff, gfn1, gfn2**
 
 These methods are available in the ``xtb``  and can be utilized both as high and low-level approaches in the ONIOM framework.
+By default, ``gfn1`` and ``gfn2`` are evaluated with the native ``xtb`` implementation; combine ``--oniom`` with ``--tblite`` to evaluate them with the ``tblite`` library instead (see :ref:`oniom-tblite`).
 
 
 .. important::
@@ -63,12 +67,12 @@ If ``ORCA`` should be employed, an `orca input <https://www.orcasoftware.de/tuto
    $external
       orca input file=<filename>
 
-or to provide only calculation method:
+or to provide only the ORCA input line (method, basis set, ...):
 
 .. code:: none
-   
+
    $external
-      orca input string=<method>
+      orca input line=<method>
 
 If no input is specified, ``xtb`` writes an orca input with the default settings (*B97-3c*).
 
@@ -128,7 +132,7 @@ flags
 -----
 
 \--chrg 'int:int':
-   extension of the classical ``--chrg`` flag, allows to specify charges for inner region and whole molecule as **inner_region_charge:system_charge**. If only one value is given, it is used as **system_charge**, and the ``xtb`` will determine the **inner_region_charge** automatically.
+   extension of the classical ``--chrg`` flag, allows to specify charges for inner region and whole molecule as **inner_region_charge:system_charge**. If only one value is given, it is used as **system_charge**, and the ``xtb`` will determine the **inner_region_charge** automatically from the partial charges of the low-level method. The same ``inner:outer`` syntax is accepted in the ``.CHRG`` file and in the ``$chrg`` instruction of the detailed input (see :ref:`oniom-xcontrol`).
 
 .. note::
    If **inner_region_charge** is specified in the external input format file(``*.inp`` or ``control``), one has to provide the same charge to the ``xtb`` as: 
@@ -138,10 +142,10 @@ flags
       > xtb <geometry_file> --oniom <orca/turbomole>:<xtb> <inner_region> --chrg <inner_region_charge>:<system_charge> 
 
 \--uhf 'int:int':
-   extension of the classical ``--uhf`` flag, allows to specify unpaired electrons for inner region and whole molecule as **inner_region_uhf:system_uhf**. If only one value is given, it is used as **system_uhf**, and the **inner_region_uhf** automatically.
+   extension of the classical ``--uhf`` flag, allows to specify the number of unpaired electrons for inner region and whole molecule as **inner_region_uhf:system_uhf**. If only one value is given, it is used as **system_uhf**, and the same number of unpaired electrons is used for the inner region. The same ``inner:outer`` syntax is accepted in the ``.UHF`` file and in the ``$spin`` instruction of the detailed input (see :ref:`oniom-xcontrol`).
 
 .. note::
-   If **inner_region_uhf** is specified in the external input format file(``*.inp`` or ``control``), one has to provide the same charge to the ``xtb`` as: 
+   If **inner_region_uhf** is specified in the external input format file(``*.inp`` or ``control``), one has to provide the same number of unpaired electrons to the ``xtb`` as: 
    
    .. code-block:: sh
       
@@ -150,17 +154,82 @@ flags
 
 
 \--cut:
-   write the geometry of the specified inner region without performing any calculations. Note that hydrogen-linked atoms are not present, due to the absence of the Wiberg bond orders. In addition, this procedure can be used to test the abovementioned automatic inner region charge determination.
+   write the geometry of the specified inner region without performing any calculations and print the charge and number of unpaired electrons of the inner region as well as the number of unpaired electrons of the whole system. Note that hydrogen-linked atoms are not present, due to the absence of the Wiberg bond orders. In addition, this procedure can be used to test the abovementioned automatic inner region charge determination.
 
 \--ceasefiles:
    extension of the original flag, with instructions for the ``xtb`` to delete all external files from ``ORCA``/``TURBOMOLE`` (except for ``*.inp`` and ``control`` files) 
-   
+
+\--tblite:
+   evaluate the ``gfn1`` and ``gfn2`` levels of the ONIOM calculation with the ``tblite`` library, see :ref:`oniom-tblite`.
+
+
+.. _oniom-tblite:
+
+ONIOM with tblite
+-----------------
+
+If ``xtb`` is compiled with ``tblite`` support, ``--oniom`` can be combined with ``--tblite`` (independent of the order of the flags) to evaluate every ``gfn1`` and ``gfn2`` level of the ONIOM calculation with the ``tblite`` library instead of the native ``xtb`` implementation:
+
+.. code:: sh
+
+   > xtb <geometry_file> --oniom gfn2:gfn1 <inner_region> --tblite
+
+``gfnff``, ``orca`` and ``turbomole`` levels are not affected by ``--tblite``.
+The method of each level is defined by the ``--oniom`` argument, i.e. a parameter file or ``--gfn`` given on the command line does not change the methods used in the ONIOM calculation.
+The following options are affected by the ``tblite`` backend:
+
+\--spinpol:
+   spin-polarization is applied to all GFN-xTB levels. At least one of the two levels has to be a GFN-xTB method, i.e. ``--spinpol`` cannot be combined with only ``gfnff``, ``orca`` or ``turbomole`` levels.
+
+\--alpb, --gbsa, --cosmo, --cpcm, --pcm, --gb, --gbe:
+   implicit solvation is applied only to the whole system with the low-level method, not to the inner region calculations (see :ref:`gbsa`).
+   The ``--gb``, ``--gbe``, ``--cpcm``, and ``--pcm`` models are only available in ``tblite`` and therefore require a GFN-xTB low-level method; they cannot be combined with a ``gfnff`` low-level method.
+
+\--efield:
+   the external electric field is applied to all GFN-xTB levels. Since the field cannot be passed to the external programs, a non-zero electric field is not supported with an ``orca`` or ``turbomole`` high-level method.
+
+.. _oniom-fixing:
+
+Fixing and constraining
+-----------------------
+
+Exact fixing (``$fix``), constraining potentials (``$constrain``), bias potentials (``$metadyn``) and confining potentials (``$wall``), see :ref:`detailed-input`, are defined for the whole system and act only on the calculation of the whole system with the low-level method.
+They are suspended during the calculations of the capped inner region with the low- and high-level methods, since the atom numbering of the inner region (including the linked atoms) differs from the one of the whole system. Thus, each constraint is only counted once in the ONIOM energy and gradient.
+
+For the atoms fixed with ``$fix``, the total ONIOM gradient is set to zero, i.e. the contributions of the inner region calculations do not move fixed atoms, independent of whether they are part of the inner region or not.
+
+As an example, to optimize the inner region of the S30L-23 complex below while keeping the guest molecule (atoms 63-98) fixed, use
+
+.. code:: none
+
+   $fix
+      atoms: 63-98
+   $end
+
+together with
+
+.. code:: sh
+
+   > xtb input.xyz --oniom gfn2:gfnff 1-62 --chrg 0:1 --input xcontrol --opt
+
+
+.. _oniom-xcontrol:
 
 xcontrol
 --------
 
-In addition to the above-mentioned ``xcontrol`` instructions deeper control over the ONIOM routine is available via the ``$oniom`` group block.
+In addition to the above-mentioned ``xcontrol`` instructions deeper control over the ONIOM routine is available via the detailed input (see :ref:`detailed-input`).
 
+The charge and number of unpaired electrons of the inner region can be set with the ``$chrg`` and ``$spin`` instructions, using the same **inner:outer** syntax as the ``--chrg`` and ``--uhf`` flags:
+
+.. code:: none
+
+   $chrg 0:1
+   $spin 0:0
+
+Command line arguments take precedence over the detailed input.
+
+Further options are available via the ``$oniom`` group block:
 
 *inner logs=[bool]*
    print high- and low-level optimization trajectory for the model system (``high.inner_region.log`` and ``low.inner_region.log``). 
@@ -176,6 +245,15 @@ In addition to the above-mentioned ``xcontrol`` instructions deeper control over
 
 *silent=[bool]*
    redirecting the output of the external programs into files.
+
+Example:
+
+.. code:: none
+
+   $oniom
+      inner logs=true
+      ignore topo=true
+   $end
 
 
 Example:  S30L-23
@@ -321,6 +399,8 @@ This system consists of 2 NCI-bound fragments: 1-62 and 63-98, the latter having
            ... skip ...
            ------------------------------------------------------------------------
            |                        INNER REGION CHARGE =  0                      |
+           |                        INNER REGION UNPAIRED ELECTRONS =  0          |
+           |                        WHOLE REGION UNPAIRED ELECTRONS =  0          |
            ------------------------------------------------------------------------
 
          normal termination of xtb
@@ -391,6 +471,6 @@ The final ``xtb`` output for the given example is divided into 3 parts with the 
                 -------------------------------------------------
 
                  -------------------------------------------------
-                | TOTAL ENERGY            -1438.298999659396 Eh   |
-                | GRADIENT NORM               0.045824034529 Eh/α |
+                | ONIOM TOTAL ENERGY      -1438.298999659396 Eh   |
+                | ONIOM GRADIENT NORM         0.045824034529 Eh/α |
                  -------------------------------------------------

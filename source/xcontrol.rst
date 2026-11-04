@@ -578,6 +578,19 @@ by repeating ``sphere`` and/or ``ellipsoid`` instructions like
 This could be used to confine different fragments in different sized spheres.
 The only restriction is that the potential shape is global.
 
+Fixing and Constraining in ONIOM Calculations
+---------------------------------------------
+
+In ONIOM calculations (``--oniom``), the ``$fix``, ``$constrain``, ``$metadyn``
+and ``$wall`` instructions refer to the atom numbering of the whole system and
+act only on the calculation of the whole system with the low-level method.
+They are suspended for the calculations of the capped inner region.
+Fixed atoms additionally have their total ONIOM gradient set to zero, so the
+inner region contributions cannot move them.
+The ONIOM-specific instructions (``$chrg inner:outer``, ``$spin inner:outer``
+and the ``$oniom`` group) are described in :ref:`oniom-xcontrol`,
+more details on fixing and constraining are given in :ref:`oniom-fixing`.
+
 Absolute Control
 ================
 
