@@ -6,7 +6,7 @@
 
 .. important::
    This page only lists the versions up to 6.2.
-   The changelogs of all later versions (6.3.0 and newer) are available on the
+   The changelogs of all later versions (6.2.1 and newer) are available on the
    `GitHub releases page <https://github.com/grimme-lab/xtb/releases>`_.
 
 .. note:: Release candidates and beta versions are not listed here.

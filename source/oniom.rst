@@ -6,11 +6,6 @@
 
 This guide is aimed to give a general overview of the ONIOM implementation within the ``xtb`` program package.
 
-.. note::
-   This feature is only present in version 6.6 and newer or in the current bleeding-edge version.
-   The evaluation of GFN-xTB methods with the ``tblite`` library (``--oniom`` together with ``--tblite``)
-   and the handling of fixed atoms and constraints described in :ref:`oniom-fixing` are only
-   available in versions newer than 6.7.1 (currently the bleeding-edge version).
 
 
 .. contents::
@@ -174,8 +169,6 @@ If ``xtb`` is compiled with ``tblite`` support, ``--oniom`` can be combined with
 
    > xtb <geometry_file> --oniom gfn2:gfn1 <inner_region> --tblite
 
-``gfnff``, ``orca`` and ``turbomole`` levels are not affected by ``--tblite``.
-The method of each level is defined by the ``--oniom`` argument, i.e. a parameter file or ``--gfn`` given on the command line does not change the methods used in the ONIOM calculation.
 The following options are affected by the ``tblite`` backend:
 
 \--spinpol:
